@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VidyaBhawan - Minimalist PYQ Portal</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#ecfdf5',
+              500: '#10b981',
+              600: '#059669',
+              700: '#047857'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #09090b;
+      color: #f4f4f5;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    .custom-scroll::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #27272a;
+      border-radius: 9999px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb:hover {
+      background: #3f3f46;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased selection:bg-emerald-500 selection:text-black">
+
+  <!-- Header / Navigation -->
+  <header class="border-b border-zinc-800/80 bg-zinc-950/80 backdrop-blur sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-bold text-lg">
+          VB
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="font-bold tracking-tight text-white text-base">VidyaBhawan</span>
+            <span class="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400 border border-zinc-700">PYQ Engine</span>
+          </div>
+          <p class="text-xs text-zinc-500 hidden sm:block">विद्याभवन • Minimalist Previous Year Question Vault</p>
+        </div>
+      </div>
+
+      <!-- Mode Selector & Stats -->
+      <div class="flex items-center gap-2 sm:gap-4">
+        <div id="examTimerBadge" class="hidden items-center gap-2 px-3 py-1.5 rounded-md bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-mono">
+          <i data-lucide="timer" class="w-3.5 h-3.5"></i>
+          <span id="examTimer">15:00</span>
+        </div>
+
+        <div class="flex p-0.5 rounded-lg bg-zinc-900 border border-zinc-800 text-xs">
+          <button id="modePracticeBtn" onclick="switchMode('practice')" class="px-3 py-1.5 rounded-md font-medium text-emerald-400 bg-zinc-800 transition">Practice</button>
+          <button id="modeExamBtn" onclick="switchMode('exam')" class="px-3 py-1.5 rounded-md font-medium text-zinc-400 hover:text-zinc-200 transition">Timed Mock</button>
+        </div>
+
+        <button onclick="toggleBookmarksDrawer()" class="relative p-2 rounded-lg border border-zinc-800 bg-zinc-900/50 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 transition">
+          <i data-lucide="bookmark" class="w-4 h-4"></i>
+          <span id="bookmarkCountBadge" class="absolute -top-1 -right-1 text-[10px] w-4 h-4 rounded-full bg-emerald-500 text-black font-bold flex items-center justify-center hidden">0</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 py-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+    <!-- Left / Center: Question Panel (8 cols) -->
+    <section class="lg:col-span-8 flex flex-col gap-5">
+      
+      <!-- Filter Bar -->
+      <div class="flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl border border-zinc-800/80 bg-zinc-900/40 text-xs text-zinc-400">
+        <div class="flex items-center gap-2 flex-wrap">
+          <span class="text-zinc-500">Exam:</span>
+          <select id="examFilter" onchange="applyFilters()" class="bg-zinc-950 border border-zinc-800 rounded px-2.5 py-1 text-zinc-200 focus:outline-none focus:border-emerald-500">
+            <option value="ALL">All Exams</option>
+            <option value="JEE Main">JEE Main</option>
+            <option value="NEET">NEET</option>
+            <option value="GATE">GATE CS</option>
+            <option value="UPSC">UPSC Prelims</option>
+          </select>
+
+          <span class="text-zinc-500 ml-2">Subject:</span>
+          <select id="subjectFilter" onchange="applyFilters()" class="bg-zinc-950 border border-zinc-800 rounded px-2.5 py-1 text-zinc-200 focus:outline-none focus:border-emerald-500">
+            <option value="ALL">All Subjects</option>
+            <option value="Physics">Physics</option>
+            <option value="Chemistry">Chemistry</option>
+            <option value="Mathematics">Mathematics</option>
+            <option value="Biology">Biology</option>
+            <option value="CS / Algo">CS / Algo</option>
+            <option value="Polity">Polity</option>
+          </select>
+        </div>
+
+        <div class="text-zinc-500 font-mono">
+          Showing <span id="currentQuestionNum" class="text-zinc-200">1</span> of <span id="totalQuestionsCount" class="text-zinc-200">0</span>
+        </div>
+      </div>
+
+      <!-- Question Card -->
+      <div class="border border-zinc-800/80 bg-zinc-900/30 rounded-2xl p-6 sm:p-8 flex flex-col relative">
+        
+        <!-- Meta details -->
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-2 flex-wrap">
+            <span id="qTagExam" class="text-[11px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-semibold">JEE Main 2024</span>
+            <span id="qTagSubject" class="text-[11px] font-mono px-2 py-0.5 rounded bg-zinc-800 text-zinc-400">Physics</span>
+            <span id="qTagShift" class="text-[11px] font-mono px-2 py-0.5 rounded bg-zinc-800/60 text-zinc-500">Shift 1</span>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button id="bookmarkBtn" onclick="toggleCurrentBookmark()" class="p-2 rounded-lg border border-zinc-800 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 transition" title="Bookmark question">
+              <i data-lucide="bookmark" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Question Statement -->
+        <div class="text-zinc-100 text-base sm:text-lg leading-relaxed font-normal mb-8" id="questionText">
+          Loading question data...
+        </div>
+
+        <!-- Options Container -->
+        <div id="optionsList" class="flex flex-col gap-3 mb-6">
+          <!-- Populated by JS -->
+        </div>
+
+        <!-- Action Bar Below Options -->
+        <div class="pt-4 border-t border-zinc-800/60 flex items-center justify-between flex-wrap gap-4">
+          <button id="toggleSolutionBtn" onclick="toggleSolution()" class="flex items-center gap-2 text-xs font-mono text-zinc-400 hover:text-emerald-400 transition">
+            <i data-lucide="help-circle" class="w-4 h-4"></i>
+            <span id="solutionBtnText">Reveal Verified Solution</span>
+          </button>
+
+          <div class="flex items-center gap-2 ml-auto">
+            <button onclick="prevQuestion()" id="prevBtn" class="px-4 py-2 rounded-lg border border-zinc-800 text-xs font-medium text-zinc-300 hover:bg-zinc-800 disabled:opacity-40 disabled:pointer-events-none transition">
+              Previous
+            </button>
+            <button onclick="nextQuestion()" id="nextBtn" class="px-4 py-2 rounded-lg bg-emerald-500 text-black text-xs font-semibold hover:bg-emerald-400 disabled:opacity-40 disabled:pointer-events-none transition">
+              Next Question
+            </button>
+          </div>
+        </div>
+
+        <!-- Detailed Solution Collapse -->
+        <div id="solutionBox" class="hidden mt-6 pt-6 border-t border-zinc-800/80 bg-zinc-950/60 -mx-6 -mb-6 sm:-mx-8 sm:-mb-8 p-6 sm:p-8 rounded-b-2xl">
+          <div class="flex items-center gap-2 mb-3">
+            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+            <span class="text-xs font-mono uppercase tracking-wider text-emerald-400 font-semibold">Official Explanation & Derivation</span>
+          </div>
+          <div id="solutionText" class="text-sm text-zinc-300 leading-relaxed space-y-2">
+            <!-- Dynamic Solution -->
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Keyboard shortcuts hint -->
+      <div class="flex items-center justify-between text-[11px] text-zinc-500 font-mono px-2">
+        <div class="hidden sm:flex gap-4">
+          <span><kbd class="bg-zinc-800 px-1.5 py-0.5 rounded text-zinc-300">1-4</kbd> Pick Option</span>
+          <span><kbd class="bg-zinc-800 px-1.5 py-0.5 rounded text-zinc-300">J</kbd> / <kbd class="bg-zinc-800 px-1.5 py-0.5 rounded text-zinc-300">K</kbd> Prev / Next</span>
+          <span><kbd class="bg-zinc-800 px-1.5 py-0.5 rounded text-zinc-300">S</kbd> Toggle Solution</span>
+          <span><kbd class="bg-zinc-800 px-1.5 py-0.5 rounded text-zinc-300">B</kbd> Bookmark</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Right: Matrix Palette & Live Score (4 cols) -->
+    <aside class="lg:col-span-4 flex flex-col gap-5">
+      
+      <!-- Palette Card -->
+      <div class="border border-zinc-800/80 bg-zinc-900/30 rounded-2xl p-5 flex flex-col">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-xs font-mono uppercase tracking-wider text-zinc-400 font-semibold">Question Matrix</h3>
+          <span id="paletteAccuracy" class="text-xs font-mono text-emerald-400">0% Accuracy</span>
+        </div>
+
+        <!-- Legend -->
+        <div class="grid grid-cols-2 gap-2 text-[11px] font-mono text-zinc-500 mb-4 pb-4 border-b border-zinc-800/60">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded bg-emerald-500"></span>
+            <span>Correct</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded bg-rose-500"></span>
+            <span>Incorrect</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded bg-zinc-700"></span>
+            <span>Visited</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded border border-zinc-700 bg-zinc-900"></span>
+            <span>Unattempted</span>
+          </div>
+        </div>
+
+        <!-- Grid Palette -->
+        <div id="questionGrid" class="grid grid-cols-5 gap-2 max-h-56 overflow-y-auto custom-scroll pr-1">
+          <!-- Populated by JS -->
+        </div>
+
+        <!-- Timed Mock Submit Button (Exam Mode only) -->
+        <div id="examSubmitWrapper" class="hidden mt-5 pt-4 border-t border-zinc-800">
+          <button onclick="finishMockTest()" class="w-full py-2.5 rounded-lg bg-emerald-500 text-black font-semibold text-xs tracking-wider uppercase hover:bg-emerald-400 transition">
+            Submit Test & View Report
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Session Stats -->
+      <div class="border border-zinc-800/80 bg-zinc-900/30 rounded-2xl p-5 flex flex-col gap-4">
+        <h3 class="text-xs font-mono uppercase tracking-wider text-zinc-400 font-semibold">Session Metrics</h3>
+        
+        <div class="grid grid-cols-2 gap-3 text-center">
+          <div class="p-3 rounded-xl bg-zinc-950/60 border border-zinc-800/50">
+            <div id="statAttempted" class="text-xl font-bold font-mono text-zinc-200">0</div>
+            <div class="text-[10px] text-zinc-500 uppercase tracking-wide mt-1">Attempted</div>
+          </div>
+          <div class="p-3 rounded-xl bg-zinc-950/60 border border-zinc-800/50">
+            <div id="statCorrect" class="text-xl font-bold font-mono text-emerald-400">0</div>
+            <div class="text-[10px] text-zinc-500 uppercase tracking-wide mt-1">Correct (+4)</div>
+          </div>
+          <div class="p-3 rounded-xl bg-zinc-950/60 border border-zinc-800/50">
+            <div id="statWrong" class="text-xl font-bold font-mono text-rose-400">0</div>
+            <div class="text-[10px] text-zinc-500 uppercase tracking-wide mt-1">Incorrect (-1)</div>
+          </div>
+          <div class="p-3 rounded-xl bg-zinc-950/60 border border-zinc-800/50">
+            <div id="statScore" class="text-xl font-bold font-mono text-zinc-100">0</div>
+            <div class="text-[10px] text-zinc-500 uppercase tracking-wide mt-1">Total Marks</div>
+          </div>
+        </div>
+
+        <button onclick="resetSession()" class="text-[11px] font-mono text-zinc-500 hover:text-zinc-300 py-1 transition flex items-center justify-center gap-1.5">
+          <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+          <span>Reset Session Data</span>
+        </button>
+      </div>
+
+    </aside>
+  </main>
+
+  <!-- Bookmarks Drawer Modal -->
+  <div id="bookmarksModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex justify-end">
+    <div class="w-full max-w-md bg-zinc-950 border-l border-zinc-800 h-full p-6 flex flex-col">
+      <div class="flex items-center justify-between pb-4 border-b border-zinc-800">
+        <div class="flex items-center gap-2">
+          <i data-lucide="bookmark" class="w-4 h-4 text-emerald-400"></i>
+          <h2 class="font-bold text-sm tracking-wide">Saved PYQ Bookmarks</h2>
+        </div>
+        <button onclick="toggleBookmarksDrawer()" class="text-zinc-500 hover:text-zinc-200">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div id="bookmarksList" class="flex-1 overflow-y-auto custom-scroll py-4 space-y-3">
+        <p class="text-xs text-zinc-500 text-center py-10">No questions bookmarked yet. Press 'B' on any question to bookmark.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Score Summary Modal (Exam Mode) -->
+  <div id="scoreModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="w-full max-w-lg bg-zinc-950 border border-zinc-800 rounded-2xl p-6 sm:p-8 flex flex-col text-center">
+      <div class="w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto mb-4">
+        <i data-lucide="award" class="w-6 h-6"></i>
+      </div>
+      <h2 class="text-xl font-bold tracking-tight text-white mb-1">Mock Exam Result</h2>
+      <p class="text-xs text-zinc-400 mb-6">Test performance calculated using official (+4 / -1) marking scheme.</p>
+
+      <div class="grid grid-cols-3 gap-3 mb-6">
+        <div class="p-3 bg-zinc-900 border border-zinc-800 rounded-xl">
+          <div id="modalScore" class="text-2xl font-bold font-mono text-emerald-400">0</div>
+          <div class="text-[10px] text-zinc-500 uppercase mt-1">Final Score</div>
+        </div>
+        <div class="p-3 bg-zinc-900 border border-zinc-800 rounded-xl">
+          <div id="modalAccuracy" class="text-2xl font-bold font-mono text-zinc-100">0%</div>
+          <div class="text-[10px] text-zinc-500 uppercase mt-1">Accuracy</div>
+        </div>
+        <div class="p-3 bg-zinc-900 border border-zinc-800 rounded-xl">
+          <div id="modalAttempted" class="text-2xl font-bold font-mono text-zinc-300">0/0</div>
+          <div class="text-[10px] text-zinc-500 uppercase mt-1">Attempted</div>
+        </div>
+      </div>
+
+      <div class="flex gap-3">
+        <button onclick="closeScoreModal()" class="flex-1 py-2.5 rounded-lg border border-zinc-800 text-xs font-medium text-zinc-300 hover:bg-zinc-800 transition">
+          Review Answers
+        </button>
+        <button onclick="resetSession(); closeScoreModal();" class="flex-1 py-2.5 rounded-lg bg-emerald-500 text-black text-xs font-semibold hover:bg-emerald-400 transition">
+          Retake Test
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- App Logic & Embedded PYQ Data -->
+  <script>
+    // --- 1. Authentic PYQ Dataset (Physics, Chem, Math, CS, UPSC) ---
+    const rawQuestions = [
+      {
+        id: 1,
+        exam: "JEE Main",
+        year: "2024",
+        shift: "Jan 27 - Shift 1",
+        subject: "Physics",
+        topic: "Electrostatics",
+        question: "A spherical shell of radius $R$ carries a uniform surface charge density $\\sigma$. The electric potential at a distance $r$ from the center where $r < R$ is:",
+        options: [
+          "Zero",
+          "$\\frac{\\sigma R}{\\varepsilon_0}$",
+          "$\\frac{\\sigma R^2}{\\varepsilon_0 r}$",
+          "$\\frac{\\sigma r}{\\varepsilon_0}$"
+        ],
+        correctIndex: 1,
+        explanation: "Inside a uniformly charged spherical conducting shell, the electric field is zero everywhere ($E = -\\frac{dV}{dr} = 0$). Hence, the potential is constant and equals the potential at the surface: $V = \\frac{Q}{4\\pi \\varepsilon_0 R}$. Substituting $Q = 4\\pi R^2 \\sigma$, we get $V = \\frac{\\sigma R}{\\varepsilon_0}$."
+      },
+      {
+        id: 2,
+        exam: "JEE Main",
+        year: "2024",
+        shift: "Jan 31 - Shift 2",
+        subject: "Mathematics",
+        topic: "Calculus",
+        question: "Evaluate the limit: $\\lim_{x \\to 0} \\frac{\\sin(x) - x + \\frac{x^3}{6}}{x^5}$.",
+        options: [
+          "$\\frac{1}{120}$",
+          "$\\frac{1}{24}$",
+          "$-\\frac{1}{120}$",
+          "$\\frac{1}{60}$"
+        ],
+        correctIndex: 0,
+        explanation: "Using Taylor series expansion: $\\sin x = x - \\frac{x^3}{3!} + \\frac{x^5}{5!} - O(x^7)$. Therefore, $\\sin x - x + \\frac{x^3}{6} = \\frac{x^5}{120}$. Dividing by $x^5$ yields $\\frac{1}{120}$."
+      },
+      {
+        id: 3,
+        exam: "NEET",
+        year: "2023",
+        shift: "Single Shift",
+        subject: "Biology",
+        topic: "Cell Biology",
+        question: "Which of the following cellular organelles is enclosed by a single unit membrane?",
+        options: [
+          "Mitochondria",
+          "Chloroplast",
+          "Lysosome",
+          "Nucleus"
+        ],
+        correctIndex: 2,
+        explanation: "Mitochondria, Chloroplasts, and Nuclei are double membrane-bound organelles. Lysosomes, Peroxisomes, and Vacuoles are bounded by a single unit membrane."
+      },
+      {
+        id: 4,
+        exam: "GATE",
+        year: "2023",
+        shift: "CS & IT",
+        subject: "CS / Algo",
+        topic: "Algorithms",
+        question: "Consider an undirected graph with $V$ vertices and $E$ edges. What is the time complexity of finding a Minimum Spanning Tree using Kruskal's algorithm with a Union-Find disjoint set?",
+        options: [
+          "$O(V^2)$",
+          "$O(E \\log V)$",
+          "$O(E + V \\log V)$",
+          "$O(V \\log E)$"
+        ],
+        correctIndex: 1,
+        explanation: "Sorting the edges takes $O(E \\log E)$ time. Since $E \\le V^2$, $\\log E = O(\\log V)$, making the sorting step $O(E \\log V)$. Disjoint set operations take nearly linear time $O(E \\alpha(V))$. Hence, total runtime is dominated by sorting: $O(E \\log V)$."
+      },
+      {
+        id: 5,
+        exam: "UPSC",
+        year: "2022",
+        shift: "Prelims Paper 1",
+        subject: "Polity",
+        topic: "Constitutional Bodies",
+        question: "With reference to the Finance Commission of India, which of the following statements is correct?",
+        options: [
+          "It is a permanent body created under Article 324.",
+          "It consists of a Chairman and four other members appointed by the President.",
+          "Its recommendations regarding revenue sharing are legally binding on the Parliament.",
+          "Members are not eligible for reappointment."
+        ],
+        correctIndex: 1,
+        explanation: "Under Article 280 of the Constitution of India, the Finance Commission is constituted every 5 years by the President. It consists of a Chairman and 4 other members. Its recommendations are quasi-judicial and advisory in nature, not legally binding on Parliament."
+      },
+      {
+        id: 6,
+        exam: "JEE Main",
+        year: "2023",
+        shift: "April 8 - Shift 1",
+        subject: "Chemistry",
+        topic: "Coordination Compounds",
+        question: "What is the primary valency and secondary valency of Cobalt in $[Co(NH_3)_5Cl]Cl_2$?",
+        options: [
+          "Primary = 2, Secondary = 5",
+          "Primary = 3, Secondary = 6",
+          "Primary = 6, Secondary = 3",
+          "Primary = 1, Secondary = 5"
+        ],
+        correctIndex: 1,
+        explanation: "Primary valency corresponds to the oxidation state of the metal: $x + 5(0) - 1 - 2 = 0 \\Rightarrow x = +3$. Secondary valency corresponds to the coordination number: 5 ammine ligands + 1 chlorido ligand = 6."
+      }
+    ];
+
+    // --- 2. State Management ---
+    let currentQuestions = [...rawQuestions];
+    let currentIndex = 0;
+    let userAnswers = {}; // { questionId: selectedOptionIndex }
+    let bookmarks = JSON.parse(localStorage.getItem('vb_bookmarks') || '[]');
+    let currentMode = 'practice'; // 'practice' or 'exam'
+    let timerInterval = null;
+    let examTimeSeconds = 15 * 60; // 15 mins
+
+    // --- 3. DOM Elements ---
+    const questionTextEl = document.getElementById('questionText');
+    const optionsListEl = document.getElementById('optionsList');
+    const solutionBoxEl = document.getElementById('solutionBox');
+    const solutionTextEl = document.getElementById('solutionText');
+    const solutionBtnTextEl = document.getElementById('solutionBtnText');
+    const qTagExamEl = document.getElementById('qTagExam');
+    const qTagSubjectEl = document.getElementById('qTagSubject');
+    const qTagShiftEl = document.getElementById('qTagShift');
+    const currentQuestionNumEl = document.getElementById('currentQuestionNum');
+    const totalQuestionsCountEl = document.getElementById('totalQuestionsCount');
+    const questionGridEl = document.getElementById('questionGrid');
+    const bookmarkBtnEl = document.getElementById('bookmarkBtn');
+    const bookmarkCountBadgeEl = document.getElementById('bookmarkCountBadge');
+
+    // Stats
+    const statAttemptedEl = document.getElementById('statAttempted');
+    const statCorrectEl = document.getElementById('statCorrect');
+    const statWrongEl = document.getElementById('statWrong');
+    const statScoreEl = document.getElementById('statScore');
+    const paletteAccuracyEl = document.getElementById('paletteAccuracy');
+
+    // --- 4. Render Current Question ---
+    function renderQuestion() {
+      if (currentQuestions.length === 0) {
+        questionTextEl.innerHTML = "No questions found matching your filter.";
+        optionsListEl.innerHTML = "";
+        return;
+      }
+
+      const q = currentQuestions[currentIndex];
+      currentQuestionNumEl.innerText = currentIndex + 1;
+      totalQuestionsCountEl.innerText = currentQuestions.length;
+
+      // Tags
+      qTagExamEl.innerText = `${q.exam} ${q.year}`;
+      qTagSubjectEl.innerText = q.subject;
+      qTagShiftEl.innerText = q.shift;
+
+      // Question body
+      questionTextEl.innerHTML = q.question;
+
+      // Options
+      optionsListEl.innerHTML = '';
+      const selected = userAnswers[q.id];
+
+      q.options.forEach((opt, idx) => {
+        const btn = document.createElement('button');
+        btn.onclick = () => selectOption(idx);
+        
+        let borderClass = 'border-zinc-800 hover:border-zinc-700 bg-zinc-950/40 text-zinc-300';
+        let badgeClass = 'border-zinc-800 text-zinc-400 bg-zinc-900';
+
+        if (selected !== undefined) {
+          if (currentMode === 'practice') {
+            if (idx === q.correctIndex) {
+              borderClass = 'border-emerald-500/50 bg-emerald-950/20 text-emerald-200';
+              badgeClass = 'border-emerald-500/50 bg-emerald-500 text-black font-bold';
+            } else if (idx === selected) {
+              borderClass = 'border-rose-500/50 bg-rose-950/20 text-rose-200';
+              badgeClass = 'border-rose-500/50 bg-rose-500 text-white font-bold';
+            }
+          } else {
+            // Exam Mode: simply highlight the chosen radio
+            if (idx === selected) {
+              borderClass = 'border-emerald-500 bg-emerald-500/10 text-white';
+              badgeClass = 'border-emerald-500 bg-emerald-500 text-black font-bold';
+            }
+          }
+        }
+
+        btn.className = `w-full text-left p-3.5 rounded-xl border flex items-center gap-3.5 transition group ${borderClass}`;
+        btn.innerHTML = `
+          <div class="w-6 h-6 rounded-md border flex items-center justify-center text-xs font-mono font-medium ${badgeClass}">
+            ${['A', 'B', 'C', 'D'][idx]}
+          </div>
+          <span class="text-sm font-normal flex-1">${opt}</span>
+        `;
+        optionsListEl.appendChild(btn);
+      });
+
+      // Solution setup
+      solutionTextEl.innerHTML = q.explanation;
+      if (currentMode === 'exam') {
+        solutionBoxEl.classList.add('hidden');
+        document.getElementById('toggleSolutionBtn').classList.add('hidden');
+      } else {
+        document.getElementById('toggleSolutionBtn').classList.remove('hidden');
+        if (selected !== undefined) {
+          solutionBoxEl.classList.remove('hidden');
+          solutionBtnTextEl.innerText = "Hide Official Solution";
+        } else {
+          solutionBoxEl.classList.add('hidden');
+          solutionBtnTextEl.innerText = "Reveal Verified Solution";
+        }
+      }
+
+      // Bookmark button active state
+      if (bookmarks.includes(q.id)) {
+        bookmarkBtnEl.classList.add('text-emerald-400', 'border-emerald-500/40');
+      } else {
+        bookmarkBtnEl.classList.remove('text-emerald-400', 'border-emerald-500/40');
+      }
+
+      renderPalette();
+      updateMetrics();
+      lucide.createIcons();
+    }
+
+    // --- 5. Interactions ---
+    function selectOption(index) {
+      const q = currentQuestions[currentIndex];
+      userAnswers[q.id] = index;
+      renderQuestion();
+    }
+
+    function toggleSolution() {
+      if (solutionBoxEl.classList.contains('hidden')) {
+        solutionBoxEl.classList.remove('hidden');
+        solutionBtnTextEl.innerText = "Hide Official Solution";
+      } else {
+        solutionBoxEl.classList.add('hidden');
+        solutionBtnTextEl.innerText = "Reveal Verified Solution";
+      }
+    }
+
+    function prevQuestion() {
+      if (currentIndex > 0) {
+        currentIndex--;
+        renderQuestion();
+      }
+    }
+
+    function nextQuestion() {
+      if (currentIndex < currentQuestions.length - 1) {
+        currentIndex++;
+        renderQuestion();
+      }
+    }
+
+    function jumpToQuestion(idx) {
+      currentIndex = idx;
+      renderQuestion();
+    }
+
+    // --- 6. Question Matrix Palette ---
+    function renderPalette() {
+      questionGridEl.innerHTML = '';
+      currentQuestions.forEach((q, idx) => {
+        const btn = document.createElement('button');
+        btn.onclick = () => jumpToQuestion(idx);
+        
+        let stateStyle = 'bg-zinc-950 border-zinc-800 text-zinc-400 hover:border-zinc-700';
+        const ans = userAnswers[q.id];
+
+        if (idx === currentIndex) {
+          stateStyle += ' ring-2 ring-emerald-500/80';
+        }
+
+        if (ans !== undefined) {
+          if (currentMode === 'practice') {
+            if (ans === q.correctIndex) {
+              stateStyle = 'bg-emerald-500/20 border-emerald-500/60 text-emerald-400';
+            } else {
+              stateStyle = 'bg-rose-500/20 border-rose-500/60 text-rose-400';
+            }
+          } else {
+            // Exam Mode: Mark as attempted
+            stateStyle = 'bg-emerald-500/20 border-emerald-500 text-emerald-300';
+          }
+        }
+
+        btn.className = `h-9 rounded-lg border font-mono text-xs font-semibold flex items-center justify-center transition ${stateStyle}`;
+        btn.innerText = idx + 1;
+        questionGridEl.appendChild(btn);
+      });
+    }
+
+    // --- 7. Metrics & Score Calculation ---
+    function updateMetrics() {
+      let attempted = 0;
+      let correct = 0;
+      let wrong = 0;
+
+      currentQuestions.forEach(q => {
+        const ans = userAnswers[q.id];
+        if (ans !== undefined) {
+          attempted++;
+          if (ans === q.correctIndex) correct++;
+          else wrong++;
+        }
+      });
+
+      const totalScore = (correct * 4) - (wrong * 1);
+      const accuracy = attempted > 0 ? Math.round((correct / attempted) * 100) : 0;
+
+      statAttemptedEl.innerText = attempted;
+      statCorrectEl.innerText = correct;
+      statWrongEl.innerText = wrong;
+      statScoreEl.innerText = totalScore;
+      paletteAccuracyEl.innerText = `${accuracy}% Accuracy`;
+    }
+
+    function resetSession() {
+      userAnswers = {};
+      currentIndex = 0;
+      renderQuestion();
+    }
+
+    // --- 8. Filter Logic ---
+    function applyFilters() {
+      const examVal = document.getElementById('examFilter').value;
+      const subVal = document.getElementById('subjectFilter').value;
+
+      currentQuestions = rawQuestions.filter(q => {
+        const matchExam = examVal === 'ALL' || q.exam === examVal;
+        const matchSub = subVal === 'ALL' || q.subject === subVal;
+        return matchExam && matchSub;
+      });
+
+      currentIndex = 0;
+      renderQuestion();
+    }
+
+    // --- 9. Bookmarks Vault ---
+    function toggleCurrentBookmark() {
+      const q = currentQuestions[currentIndex];
+      if (bookmarks.includes(q.id)) {
+        bookmarks = bookmarks.filter(id => id !== q.id);
+      } else {
+        bookmarks.push(q.id);
+      }
+      localStorage.setItem('vb_bookmarks', JSON.stringify(bookmarks));
+      updateBookmarkUI();
+      renderQuestion();
+    }
+
+    function updateBookmarkUI() {
+      if (bookmarks.length > 0) {
+        bookmarkCountBadgeEl.innerText = bookmarks.length;
+        bookmarkCountBadgeEl.classList.remove('hidden');
+      } else {
+        bookmarkCountBadgeEl.classList.add('hidden');
+      }
+
+      const listEl = document.getElementById('bookmarksList');
+      if (bookmarks.length === 0) {
+        listEl.innerHTML = '<p class="text-xs text-zinc-500 text-center py-10">No questions bookmarked yet.</p>';
+        return;
+      }
+
+      listEl.innerHTML = '';
+      bookmarks.forEach(id => {
+        const q = rawQuestions.find(item => item.id === id);
+        if (!q) return;
+
+        const item = document.createElement('div');
+        item.className = 'p-3 rounded-xl border border-zinc-800 bg-zinc-900/50 hover:bg-zinc-800 cursor-pointer transition';
+        item.onclick = () => {
+          // Switch to this question
+          const idx = currentQuestions.findIndex(x => x.id === q.id);
+          if (idx !== -1) {
+            currentIndex = idx;
+            renderQuestion();
+            toggleBookmarksDrawer();
+          } else {
+            // Reset filter to see all
+            document.getElementById('examFilter').value = 'ALL';
+            document.getElementById('subjectFilter').value = 'ALL';
+            applyFilters();
+            jumpToQuestion(currentQuestions.findIndex(x => x.id === q.id));
+            toggleBookmarksDrawer();
+          }
+        };
+        item.innerHTML = `
+          <div class="flex items-center justify-between text-[11px] font-mono text-zinc-400 mb-1">
+            <span>${q.exam} ${q.year}</span>
+            <span class="text-emerald-400">${q.subject}</span>
+          </div>
+          <p class="text-xs text-zinc-200 line-clamp-2">${q.question}</p>
+        `;
+        listEl.appendChild(item);
+      });
+    }
+
+    function toggleBookmarksDrawer() {
+      const modal = document.getElementById('bookmarksModal');
+      modal.classList.toggle('hidden');
+    }
+
+    // --- 10. Mode Switching & Timed Exam ---
+    function switchMode(mode) {
+      currentMode = mode;
+      const practiceBtn = document.getElementById('modePracticeBtn');
+      const examBtn = document.getElementById('modeExamBtn');
+      const timerBadge = document.getElementById('examTimerBadge');
+      const examSubmitWrapper = document.getElementById('examSubmitWrapper');
+
+      if (mode === 'exam') {
+        practiceBtn.className = "px-3 py-1.5 rounded-md font-medium text-zinc-400 hover:text-zinc-200 transition";
+        examBtn.className = "px-3 py-1.5 rounded-md font-medium text-emerald-400 bg-zinc-800 transition";
+        timerBadge.classList.remove('hidden');
+        timerBadge.classList.add('flex');
+        examSubmitWrapper.classList.remove('hidden');
+        startTimer();
+      } else {
+        practiceBtn.className = "px-3 py-1.5 rounded-md font-medium text-emerald-400 bg-zinc-800 transition";
+        examBtn.className = "px-3 py-1.5 rounded-md font-medium text-zinc-400 hover:text-zinc-200 transition";
+        timerBadge.classList.add('hidden');
+        timerBadge.classList.remove('flex');
+        examSubmitWrapper.classList.add('hidden');
+        clearInterval(timerInterval);
+      }
+      renderQuestion();
+    }
+
+    function startTimer() {
+      clearInterval(timerInterval);
+      examTimeSeconds = 15 * 60;
+      updateTimerDisplay();
+
+      timerInterval = setInterval(() => {
+        examTimeSeconds--;
+        updateTimerDisplay();
+        if (examTimeSeconds <= 0) {
+          clearInterval(timerInterval);
+          finishMockTest();
+        }
+      }, 1000);
+    }
+
+    function updateTimerDisplay() {
+      const mins = Math.floor(examTimeSeconds / 60);
+      const secs = examTimeSeconds % 60;
+      document.getElementById('examTimer').innerText = 
+        `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    }
+
+    function finishMockTest() {
+      clearInterval(timerInterval);
+      let attempted = 0, correct = 0, wrong = 0;
+
+      currentQuestions.forEach(q => {
+        const ans = userAnswers[q.id];
+        if (ans !== undefined) {
+          attempted++;
+          if (ans === q.correctIndex) correct++;
+          else wrong++;
+        }
+      });
+
+      const totalScore = (correct * 4) - (wrong * 1);
+      const accuracy = attempted > 0 ? Math.round((correct / attempted) * 100) : 0;
+
+      document.getElementById('modalScore').innerText = totalScore;
+      document.getElementById('modalAccuracy').innerText = `${accuracy}%`;
+      document.getElementById('modalAttempted').innerText = `${attempted}/${currentQuestions.length}`;
+      
+      document.getElementById('scoreModal').classList.remove('hidden');
+    }
+
+    function closeScoreModal() {
+      document.getElementById('scoreModal').classList.add('hidden');
+      switchMode('practice'); // Auto switch back to review mode
+    }
+
+    // --- 11. Keyboard Shortcuts ---
+    window.addEventListener('keydown', (e) => {
+      if (document.activeElement.tagName === 'SELECT') return;
+
+      if (e.key === 'j' || e.key === 'J') prevQuestion();
+      if (e.key === 'k' || e.key === 'K') nextQuestion();
+      if (e.key === 's' || e.key === 'S') toggleSolution();
+      if (e.key === 'b' || e.key === 'B') toggleCurrentBookmark();
+
+      if (['1', '2', '3', '4'].includes(e.key)) {
+        selectOption(parseInt(e.key) - 1);
+      }
+    });
+
+    // Initial boot
+    updateBookmarkUI();
+    renderQuestion();
+  </script>
+</body>
+</html>
